@@ -5,8 +5,9 @@ const fs = require('fs');
 const crypto = require('crypto');
 const csv = require('csvtojson');
 
-
-router.get('/:id', function (req, res, next) {
+//게시물 고유 id가 id인 글을 불러온다.
+//parameter
+router.get('/:id', async (req, res) => {
     var id = req.params.id;
     var check;
     csv().fromFile('./public/csv/board.csv')
@@ -15,7 +16,7 @@ router.get('/:id', function (req, res, next) {
                 if (form.id == id) {
                     check = 1;
                     const data = {
-                        'id': form.id,
+                        'id': form.id, 
                         'title': form.title,
                         'content': form.content
                     }
@@ -28,7 +29,12 @@ router.get('/:id', function (req, res, next) {
         })
 });
 
-router.post('/', function (req, res, next) {
+
+//게시물을 저장함.
+//게시물 고유 id, 게시물제목, 게시물내용, 게시물작성시간, 게시물 비밀번호, 솔트값
+// 저장시 같은 제목 글 있으면 실패 메세지 반환
+//body에 data 담음.
+router.post('/', async (req, res) => {
     const id = req.body.id;
     const title = req.body.title;
     const content = req.body.content;
@@ -36,7 +42,6 @@ router.post('/', function (req, res, next) {
     var salt;
     var hashedStr;
     if (!title || !content || !password || !id) {
-        res.send("contents is required");
         console.log(err);
     } else {
         crypto.randomBytes(32, (err, buf) => {
@@ -54,7 +59,7 @@ router.post('/', function (req, res, next) {
             }
         });
         csv().fromFile('./public/csv/board.csv')
-            .then(function (articleData) {
+            .then(function (formData) {
                 const data = {
                     "id": id,
                     "title": title,
@@ -63,8 +68,8 @@ router.post('/', function (req, res, next) {
                     "password": hashedStr,
                     "salt": salt
                 };
-                articleData.push(data);
-                const csv = jsontocsv(articleData, {
+                formData.push(data);
+                const csv = jsontocsv(formData, {
                     fields: ["id", "title", "content", "createdTime", "password", "salt"]
                 });
                 fs.writeFileSync('./public/csv/board.csv', csv, {
@@ -76,7 +81,10 @@ router.post('/', function (req, res, next) {
     }
 });
 
-router.put('/', function (req, res, next) {
+
+//게시물을 수정함.
+//게시물 고유 id와 같은 수정된 값으로 다시 저장함.(게시물 작성시간까지 같이 수정)
+router.put('/', async (req, res) => {
     const id = req.body.id;
     const password = req.body.password;
     const title = req.body.title;
@@ -93,10 +101,11 @@ router.put('/', function (req, res, next) {
                                 form.title = title;
                             if (content)
                                 form.content = content;
-                            const csv = jsontocsv(articleData, {
+                            const csv = jsontocsv(formData, {
                                 fields: ["id", "title", "content", "createdTime", "password", "salt"]
                             });
                             fs.writeFileSync('./public/csv/board.csv', csv, {encoding: 'utf8',flag: 'w'});
+                            console.log('updated');
                             res.send("updated");
                         } else {
                             res.send("incorrect password");
@@ -112,7 +121,9 @@ router.put('/', function (req, res, next) {
         });
 });
 
-router.delete('/', function (req, res, next) {
+//게시물을 삭제.
+//게시물 고유 id와 같은 게시물을 삭제함
+router.delete('/', async (req, res) => {
     const id = req.body.id;
     const password = req.body.password;
     var count = 0;
@@ -122,7 +133,7 @@ router.delete('/', function (req, res, next) {
                 if (form.id == id) {
                     count += 1;
                     crypto.pbkdf2(password, form.salt, 10, 32, 'SHA512', (err, result) => {
-                        if (result.toString('base64') === article.password) {
+                        if (result.toString('base64') === form.password) {
                             formData.splice(index, 1);
                             const csvData = jsontocsv(formData, {
                                 fields: ["id", "title", "content", "createdTime", "password", "salt"]
@@ -136,7 +147,7 @@ router.delete('/', function (req, res, next) {
                 }
             })
             if (count == 0)
-                res.send('no data contains this id');
+                res.send('error');
         })
         .catch(function (err) {
             console.error(err);
