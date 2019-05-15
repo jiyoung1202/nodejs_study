@@ -10,4 +10,14 @@ module.exports = {
     MISS_MATCH_PW: "비밀번호가 맞지 않습니다.",
     LOGIN_SUCCESS: "로그인 성공",
     LOGIN_FAIL: "로그인 실패",
+
+    SAVE_SUCCESS: "데이터 저장 성공",
+    SAVE_FAIL: "데이터 저장 실패",
+    READ_FAIL: "데이터 저장 실패",
+
+    POST_SELECT_SUCCESS: "글 조회 성공",
+    NO_POST: "존재하지 않는 글입니다",
+    POST_SELECT_FAIL: "글 조회 실패",
+    POST_EDIT_SUCCESS : "글 수정 성공",
+    POST_DELETE_SUCCESS : "글 삭제 성공"
 };
