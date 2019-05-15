@@ -5,6 +5,10 @@ const fs = require('fs');
 const crypto = require('crypto');
 const csv = require('csvtojson');
 
+const util = require('../../modules/utils/utils');
+const statusCode = require('../../modules/utils/statusCode');
+const resMessage = require('../../modules/utils/responseMessage');
+
 //게시물 고유 id가 id인 글을 불러온다.
 //parameter
 router.get('/:id', async (req, res) => {
@@ -20,12 +24,14 @@ router.get('/:id', async (req, res) => {
                         'title': form.title,
                         'content': form.content
                     }
-                    res.send(data);
+                    res.status(200).send(util.successTrue(statusCode.OK, resMessage.POST_SELECT_SUCCESS));
+                    //res.send(data);
                     console.log(data);
                 }
             })
             if (check == undefined)
-                console.log(err);
+            res.status(200).send(util.successFalse(statusCode.NOT_FOUND, resMessage.OUT_OF_VALUE));
+                //console.log(err);
         })
 });
 
@@ -42,16 +48,20 @@ router.post('/', async (req, res) => {
     var salt;
     var hashedStr;
     if (!title || !content || !password || !id) {
-        console.log(err);
+        //console.log(err);
+        res.status(200).send(util.successFalse(statusCode.NOT_FOUND, resMessage.NULL_VALUE));
     } else {
         crypto.randomBytes(32, (err, buf) => {
             if (err) {
                 console.log(err);
+                //res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR));
             } else {
                 salt = buf.toString('base64');
                 crypto.pbkdf2(password, salt, 10, 32, 'SHA512', (err, result) => {
                     if (err) {
-                        res.send("fail");
+                        //res.send("fail");
+                        res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.SAVE_FAIL));
+
                     } else {
                         hashedStr = result.toString('base64');
                     }
@@ -76,7 +86,8 @@ router.post('/', async (req, res) => {
                     encoding: 'utf8',
                     flag: 'w'
                 });
-                res.send("data is saved");
+                res.status(200).send(util.successTrue(statusCode.OK, resMessage.SAVE_SUCCESS));
+                //res.send("data is saved");
             });
     }
 });
@@ -106,18 +117,23 @@ router.put('/', async (req, res) => {
                             });
                             fs.writeFileSync('./public/csv/board.csv', csv, {encoding: 'utf8',flag: 'w'});
                             console.log('updated');
-                            res.send("updated");
+                            //res.send("updated");
+                            res.status(200).send(util.successTrue(statusCode.OK, resMessage.POST_EDIT_SUCCESS));
+
                         } else {
-                            res.send("incorrect password");
+                            res.status(200).send(util.successFalse(statusCode.BAD_REQUEST, resMessage.MISS_MATCH_PW));
+                            //res.send("incorrect password");
                         }
                     });
                 }
             });
             if (count == 0)
-                res.send('no id or no data contains this id');
+            res.status(200).send(util.successFalse(statusCode.NOT_FOUND, resMessage.OUT_OF_VALUE));
         })
         .catch(function (err) {
             console.error(err);
+            res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR));
+
         });
 });
 
@@ -139,15 +155,18 @@ router.delete('/', async (req, res) => {
                                 fields: ["id", "title", "content", "createdTime", "password", "salt"]
                             });
                             fs.writeFileSync('./public/csv/board.csv', csvData, {encoding: 'utf8',flag: 'w'});
-                            res.send("deleted");
+                            res.status(200).send(util.successTrue(statusCode.OK, resMessage.POST_DELETE_SUCCESS));
+                           // res.send("deleted");
                         } else {
-                            res.send("wrong password");
+                            res.status(200).send(util.successFalse(statusCode.BAD_REQUEST, resMessage.MISS_MATCH_PW));
+                           // res.send("wrong password");
                         }
                     })
                 }
             })
             if (count == 0)
-                res.send('error');
+            res.status(200).send(util.successFalse(statusCode.NOT_FOUND, resMessage.OUT_OF_VALUE));
+                // res.send('error');
         })
         .catch(function (err) {
             console.error(err);
